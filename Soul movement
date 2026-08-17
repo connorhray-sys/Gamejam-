@@ -1,0 +1,21 @@
+extends CharacterBody2D
+ 
+# speed in pixels/sec
+var speed = 400 
+ 
+func _physics_process(_delta):
+	# setup direction of movement
+	var direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	# stop diagonal movement by listening for input then setting axis to zero
+	
+	
+	
+	#normalize the directional movement
+	direction = direction.normalized()
+	# setup the actual movement
+	velocity = (direction * speed)
+	if Input.is_action_pressed("Cancel"):
+		velocity *= 0.5
+	
+	#if "cancel" is input, velocity *=0.5
+	move_and_slide()
