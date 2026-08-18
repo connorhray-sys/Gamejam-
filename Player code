@@ -1,0 +1,264 @@
+#Player code
+extends CharacterBody2D 
+ 
+var spd = 200 
+var jump = -350
+var jumping = false 
+var is_preparing_jump = false 
+var dead = false 
+var gravity_on = true 
+var on_ice = false 
+var forced_direction: float = 0.0
+var bouncy = false
+var bounce_force = -500
+var can_bounce = true
+var crazy = false
+
+signal zoom 
+signal zoom2 
+signal flip 
+signal normal
+signal icy
+signal conveyor
+signal bounce
+signal death
+
+@export var conveyor_speed1: float = 150.0
+@export var conveyor_speed2: float = -150.0
+@onready var blink_rect = $CanvasLayer/BlinkRect 
+@onready var pause_menu = %PauseMenu 
+@onready var animated_sprite = $AnimatedSprite2D 
+@onready var blur_rect = $CanvasLayer/BlurRect 
+@onready var timer: Timer = $Timer
+@onready var label: Label = $Label
+
+func _physics_process(delta: float) -> void: 
+	if not is_on_floor() and gravity_on == true: 
+		velocity += get_gravity() * delta 
+	label.text = str(int(timer.time_left))
+	if Input.is_action_just_pressed("dash"):
+		spd = 600
+		await get_tree().create_timer(0.2).timeout
+		spd = 200
+		await get_tree().create_timer(2).timeout
+		
+	var direction = Input.get_axis("left", "right") + forced_direction
+	direction = clamp(direction, -1.0, 1.0)
+ 
+	if direction != 0 and is_on_floor(): 
+		if not $GoofyRun.playing: 
+			$GoofyRun.play() 
+	else: 
+		if $GoofyRun.playing: 
+			$GoofyRun.stop()
+			
+	if direction != 0:
+		if on_ice:
+			velocity.x = move_toward(velocity.x, direction * spd, 4)
+		else:
+			velocity.x = direction * spd
+	else:
+		if on_ice:
+			velocity.x = move_toward(velocity.x, 0, 4)
+		else:
+			velocity.x = move_toward(velocity.x, 0, spd)
+ 
+	if Input.is_action_just_pressed("jump") and is_on_floor() and not jumping and not is_preparing_jump: 
+		jumping = true 
+		is_preparing_jump = true 
+		animated_sprite.play("jump1") 
+
+		await get_tree().create_timer(0.2).timeout
+		
+		is_preparing_jump = false 
+		velocity.y = jump 
+		animated_sprite.play("jump2") 
+		
+		var sound = randi_range(1, 6) 
+		if sound == 1: $Boing1.play() 
+		elif sound == 2: $Boing2.play() 
+		elif sound == 3: $Boing3.play() 
+		elif sound == 4: $Boing4.play() 
+		elif sound == 5: $Boing5.play() 
+		elif sound == 6: $Boing6.play() 
+
+		await get_tree().create_timer(0.2).timeout 
+		if crazy == true:
+			jump = randi_range(-200, -500)
+		
+	move_and_slide()
+	
+	if bouncy and is_on_floor() and can_bounce:
+		bounce_force = randi_range(-100, -400)
+		velocity.y = bounce_force
+		jumping = true
+		can_bounce = false
+		await get_tree().create_timer(0.15).timeout
+		can_bounce = true
+
+	if is_on_floor() and velocity.y >= 0 and not is_preparing_jump:
+		jumping = false
+
+	if jumping:
+		pass 
+	else:
+		if direction != 0:
+			animated_sprite.play("move")
+		else:
+			animated_sprite.play("idle")
+
+	if Input.is_action_just_pressed("pause"): 
+		pause_menu.visible = !pause_menu.visible 
+		get_tree().paused = not get_tree().paused 
+		pause_menu.visible = get_tree().paused 
+ 
+
+func _on_resume_pressed() -> void: 
+	get_tree().paused = false 
+	pause_menu.visible = false 
+ 
+func _on_restart_pressed() -> void: 
+	get_tree().paused = false 
+	get_tree().reload_current_scene() 
+ 
+func _on_quit_pressed() -> void: 
+	get_tree().paused = false 
+	get_tree().quit() 
+ 
+func _on_win_door_body_entered(body: Node2D) -> void: 
+	if body.name == "Player": 
+		get_tree().change_scene_to_file("res://Scenes/main.tscn")
+ 
+func _on_spikes_body_entered(body: Node2D) -> void: 
+	if body.name == "Player" and not dead:
+		emit_signal("death") 
+		dead = true
+		set_physics_process(false) 
+		animated_sprite.stop() 
+		await get_tree().create_timer(1.0).timeout 
+		if is_inside_tree(): 
+			get_tree().reload_current_scene() 
+ 
+func _on_random_event_timer_timeout() -> void:
+	if crazy == true:
+		var random_number = randi_range(1, 9) 
+	 
+		if random_number == 1: 
+			blur_rect.visible = true 
+			print("BLUR!") 
+			await get_tree().create_timer(3.0).timeout 
+			blur_rect.visible = false 
+			print("1") 
+	 
+		elif random_number == 2: 
+			blink_rect.visible = true 
+			await get_tree().create_timer(0.2).timeout 
+			blink_rect.visible = false 
+			print("2") 
+	 
+		elif random_number == 3: 
+			$Camera2D.rotation_degrees += 90 
+			await get_tree().create_timer(3).timeout 
+			$Camera2D.rotation_degrees -= 90 
+			print("3") 
+	 
+		elif random_number == 4: 
+			$Clone.visible = true 
+			$AnimatedSprite2D.visible = false 
+			await get_tree().create_timer(2.8).timeout 
+			$Clone.visible = false 
+			$AnimatedSprite2D.visible = true 
+			print("4") 
+	 
+		elif random_number == 5: 
+			$Clone2.visible = true 
+			$AnimatedSprite2D.visible = false 
+			$Spikes.visible = true 
+			get_tree().paused = true 
+			await get_tree().create_timer(2).timeout 
+			get_tree().paused = false 
+			$Clone2.visible = false 
+			$AnimatedSprite2D.visible = true 
+			$Spikes.visible = false 
+			print("5") 
+	 
+		elif random_number == 6: 
+			gravity_on = false 
+			await get_tree().create_timer(3).timeout 
+			gravity_on = true 
+	 
+		elif random_number == 7: 
+			emit_signal("zoom") 
+	 
+		elif random_number == 8: 
+			emit_signal("zoom2") 
+	 
+		elif random_number == 9: 
+			emit_signal("flip")
+
+func _on_ice_body_entered(body: Node2D) -> void:
+	if body.name == "Player":
+		on_ice = true
+
+func _on_ice_body_exited(body: Node2D) -> void:
+	if body.name == "Player":
+		on_ice = false
+
+func _on_spikes_2_body_entered(body: Node2D) -> void:
+	if body.name == "Player" and not dead: 
+		emit_signal("death") 
+		dead = true 
+		set_physics_process(false) 
+		animated_sprite.stop() 
+		await get_tree().create_timer(1.0).timeout 
+		if is_inside_tree(): 
+			get_tree().reload_current_scene() 
+
+func _on_spikes_3_body_entered(body: Node2D) -> void:
+	if body.name == "Player" and not dead:
+		emit_signal("death")  
+		dead = true 
+		set_physics_process(false) 
+		animated_sprite.stop() 
+		await get_tree().create_timer(1.0).timeout 
+		if is_inside_tree(): 
+			get_tree().reload_current_scene()
+
+func _on_bouncy_timer_timeout() -> void:
+	emit_signal("normal")
+	await get_tree().create_timer(3.0).timeout
+	emit_signal("icy")
+	on_ice = true
+	await get_tree().create_timer(3).timeout
+	emit_signal("conveyor") 
+	on_ice = false
+	var x = randi_range(1, 2)
+	if x == 1:
+		forced_direction = 0.4
+	else:
+		forced_direction = -0.4
+	await get_tree().create_timer(3.0).timeout
+	emit_signal("bounce")
+	forced_direction = 0.0
+	bouncy = true
+	bounce_force = randi_range(-100, -400)
+	await get_tree().create_timer(3.0).timeout
+	bouncy = false
+
+
+func _on_timer_timeout() -> void:
+	crazy = true
+
+
+func _on_kill_zone_body_entered(body: Node2D) -> void:
+	if body.name == "Player":
+		if body.name == "Player" and not dead: 
+			emit_signal("death") 
+			dead = true 
+			set_physics_process(false) 
+			animated_sprite.stop() 
+			await get_tree().create_timer(1.0).timeout 
+			if is_inside_tree(): 
+				get_tree().reload_current_scene()
+
+
