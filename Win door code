@@ -1,0 +1,25 @@
+extends Area2D
+
+signal portal
+signal portal2
+var stop = false
+func _on_portal() -> void:
+	if stop == true:
+		pass
+	else:
+		global_position.x += randf_range(-5, 5) 
+		global_position.y += randf_range(-5, 5)
+		await get_tree().create_timer(0.01).timeout
+		emit_signal("portal")
+
+func _ready() -> void:
+	emit_signal("portal2")
+
+
+func _on_portal_2() -> void:
+	await get_tree().create_timer(12).timeout
+	emit_signal("portal")
+
+
+func _on_player_death() -> void:
+	stop = true
