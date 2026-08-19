@@ -1,0 +1,7 @@
+extends Node2D
+
+
+func _on_player_flip() -> void:
+	scale.x = -1
+	await get_tree().create_timer(2.8).timeout
+	scale.x = 1
