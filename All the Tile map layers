@@ -1,0 +1,41 @@
+Normal tilemaplayer code
+extends TileMapLayer
+
+
+func _on_player_normal() -> void:
+	visible = true
+	await get_tree().create_timer(3).timeout
+	visible = false
+
+Icy tilemaplayer code
+extends TileMapLayer
+
+
+
+func _on_player_icy() -> void:
+	visible = true
+	await get_tree().create_timer(3).timeout
+	visible = false
+
+Conveyor tilemaplayer code
+extends TileMapLayer
+
+
+
+
+func _on_player_conveyor() -> void:
+	visible = true
+	await get_tree().create_timer(3).timeout
+	visible = false
+
+Bouncy tilemaplayer code
+extends TileMapLayer
+
+
+
+
+
+func _on_player_bounce() -> void:
+	visible = true
+	await get_tree().create_timer(3).timeout
+	visible = false
