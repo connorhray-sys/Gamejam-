@@ -1,0 +1,48 @@
+extends Camera2D
+
+@export var zoom_speed : float = 10.0
+@export var zoom_increment : float = 1
+@export var min_zoom : float = 0.005
+@export var max_zoom : float = 10
+
+# Track the ideal target zoom
+var target_zoom : Vector2 = Vector2.ONE
+
+func _ready() -> void:
+	zoom_in()
+
+
+
+func _process(delta):
+	# Smoothly glide the current zoom toward the target zoom
+	zoom = zoom.lerp(target_zoom, zoom_speed * delta)
+
+func zoom_in():
+	target_zoom.x = clamp(target_zoom.x + zoom_increment, min_zoom, max_zoom)
+	target_zoom.y = clamp(target_zoom.y + zoom_increment, min_zoom, max_zoom)
+
+func zoom_out():
+	target_zoom.x = clamp(target_zoom.x - zoom_increment, min_zoom, max_zoom)
+	target_zoom.y = clamp(target_zoom.y - zoom_increment, min_zoom, max_zoom)
+
+
+func _on_player_zoom() -> void:
+	zoom_in()
+	zoom_in()
+	zoom_in()
+	zoom_in()
+	zoom_in()
+	zoom_in()
+	await get_tree().create_timer(2.8).timeout
+	zoom_out()
+	zoom_out()
+	zoom_out()
+	zoom_out()
+	zoom_out()
+	zoom_out()
+
+
+func _on_player_zoom_2() -> void:
+	zoom_out()
+	await get_tree().create_timer(2.8).timeout
+	zoom_in()
