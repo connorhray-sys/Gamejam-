@@ -1,0 +1,5 @@
+extends Area2D
+
+
+func _on_player_spikes() -> void:
+	global_position.x += randf_range(-100, 100)
